@@ -10,6 +10,9 @@ This source code is licensed under the Apache License 2.0 (see LICENSE.txt).
 This source code may use other Open Source software components (see LICENSE.txt).
 */
 
+//clarify copyright topic concerning EKS InTec GmbH input
+
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -549,6 +552,9 @@ namespace AasxPackageExplorer
 
             if (cmd == "importaml")
                 CommandBinding_ImportAML();
+
+            if (cmd == "importamlsubmodel")
+                CommandBinding_ImportAMLSubmodel();
 
             if (cmd.StartsWith("exportaml"))
                 CommandBinding_ExportAML(cmd);
@@ -2024,61 +2030,147 @@ namespace AasxPackageExplorer
             if (Options.Curr.UseFlyovers) this.CloseFlyover();
         }
 
+        public void CommandBinding_ImportAMLSubmodel()
+        {
+            AdminShellV20.AdministrationShell aas = GetSelectedAdministationShell();
+            if (aas == null) return;
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                InitialDirectory = DetermineInitialDirectory(AppDomain.CurrentDomain.BaseDirectory),
+                Title = "Select AML file to be imported as submodel",
+                Filter = "AutomationML files (*.aml)|*.aml|AutomationML container files (*.amlx)|*.amlx|All files (*.*)|*.*"
+            };
+            
+            if (Options.Curr.UseFlyovers) this.StartFlyover(new EmptyFlyout());
+
+            bool imported = false;
+            if (openFileDialog.ShowDialog() ?? false)
+            {
+                imported = TryImportAmlSubModel(openFileDialog.FileName, aas);
+            }
+
+            if(imported) this.RestartUIafterNewPackage();
+            if (Options.Curr.UseFlyovers) this.CloseFlyover();
+        }
+
+        private AdminShellV20.AdministrationShell GetSelectedAdministationShell()
+        {
+            // TODO (Miriam Schleipen-EKS InTec GmbH): Additional error case - what if AAS is visually, but not explicitely selected?
+            if (DisplayElements.SelectedItem != null && DisplayElements.SelectedItem is VisualElementAdminShell)
+            {
+                VisualElementAdminShell ve1 = DisplayElements.SelectedItem as VisualElementAdminShell;
+                return ve1.theAas;
+            }
+            else
+            {
+                MessageBoxFlyoutShow(
+                    "No valid AAS selected as AAS for import.", "Import AutomationML ..",
+                    AnyUiMessageBoxButton.OK, AnyUiMessageBoxImage.Error);
+                return null;
+            }
+        }
+
+        private bool TryImportAmlSubModel(string fileName, AdminShellV20.AdministrationShell aas)
+        {
+            try
+            {
+                ImportAmlSubModel(fileName, aas);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Singleton.Error(ex, "When importing AutomationML as submodel, an error occurred");
+                return false;
+            }
+        }
+        
+        private void ImportAmlSubModel(string fileName, AdminShellV20.AdministrationShell aas)
+        {
+            RememberForInitialDirectory(fileName);
+            //generate ID for submodel which shall be created by means of the provided AutomationML model
+            string id = Options.Curr.GenerateIdAccordingTemplate(Options.Curr.TemplateIdSubmodelTemplate);
+            AasxAmlImExport.AmlImport.ImportSubmodelInto(_packageCentral.Main, fileName, id, aas);
+        }
+
         public void CommandBinding_ExportAML(string cmd)
         {
             // check if a specific Submodel is to be exported
             AdminShell.Submodel submodel = null;
             if (cmd == "exportamlbystructure")
             {
-                VisualElementSubmodelRef ve1 = null;
-                if (DisplayElements.SelectedItem != null && DisplayElements.SelectedItem is VisualElementSubmodelRef)
-                    ve1 = DisplayElements.SelectedItem as VisualElementSubmodelRef;
-
-                if (ve1 == null || ve1.theSubmodel == null || ve1.theEnv == null)
-                {
-                    MessageBoxFlyoutShow(
-                        "No valid SubModel selected for exporting.", "Export AutomationML ..",
-                        AnyUiMessageBoxButton.OK, AnyUiMessageBoxImage.Error);
-                    return;
-                }
-
-                submodel = ve1.theSubmodel;
+                submodel = GetSubmodel();
+                if (submodel == null) return;
             }
 
-            // get the output file
-            var dlg = new Microsoft.Win32.SaveFileDialog();
-            dlg.InitialDirectory = DetermineInitialDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
-            dlg.Title = "Select AML file to be exported";
-            dlg.FileName = "new.aml";
-            dlg.DefaultExt = "*.aml";
-            dlg.Filter =
-                "AutomationML files (*.aml)|*.aml|AutomationML files (*.aml) (compact)|" +
-                "*.aml|All files (*.*)|*.*";
+            Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                InitialDirectory = DetermineInitialDirectory(AppDomain.CurrentDomain.BaseDirectory),
+                Title = "Select AML file to be exported",
+                Filter = "AutomationML files (*.aml)|*.aml|AutomationML files (*.aml) (compact)|" +
+                    "*.aml|All files (*.*)|*.*",
+                FileName = string.IsNullOrEmpty(submodel?.idShort) ? "new.aml" : $"{submodel.idShort}.aml",
+                DefaultExt = "*.aml",
+            };
 
             if (Options.Curr.UseFlyovers) this.StartFlyover(new EmptyFlyout());
-            var res = dlg.ShowDialog(this);
 
+            if (saveFileDialog.ShowDialog() ?? false)
+            {
+                _ = TryExportAml(saveFileDialog, cmd, submodel);
+            }
+
+            if (Options.Curr.UseFlyovers) this.CloseFlyover();
+        }
+
+        private bool TryExportAml(Microsoft.Win32.SaveFileDialog dlg, string cmd, AdminShell.Submodel submodel)
+        {
             try
             {
-                if (res == true)
-                {
-                    RememberForInitialDirectory(dlg.FileName);
-
-                    if (cmd == "exportamlbymapping")
-                        AasxAmlImExport.AmlExportMapping.ExportTo(
-                            _packageCentral.Main, dlg.FileName, tryUseCompactProperties: dlg.FilterIndex == 2);
-
-                    if (cmd == "exportamlbystructure")
-                        AasxAmlImExport.AmlExportStruct.ExportTo(
-                            _packageCentral.Main, dlg.FileName, submodel: submodel);
-                }
+                ExportAml(dlg, cmd, submodel);
+                return true;
+            }
+            catch (ArgumentException ex)
+            {
+                Log.Singleton.Error(ex, $"Unknown command: {cmd}");
             }
             catch (Exception ex)
             {
                 Log.Singleton.Error(ex, "When exporting AML, an error occurred");
             }
+            return false;
+        }
 
-            if (Options.Curr.UseFlyovers) this.CloseFlyover();
+        private void ExportAml(Microsoft.Win32.SaveFileDialog dlg, string cmd, AdminShellV20.Submodel submodel)
+        {
+            RememberForInitialDirectory(dlg.FileName);
+
+            if (cmd.Equals("exportamlbymapping"))
+            {
+                AasxAmlImExport.AmlExportMapping.ExportTo(
+                    _packageCentral.Main, dlg.FileName, tryUseCompactProperties: dlg.FilterIndex == 2);
+            }
+            else if (cmd.Equals("exportamlbystructure"))
+            {
+                AasxAmlImExport.AmlExportStruct.ExportTo(
+                    _packageCentral.Main, dlg.FileName, submodel: submodel);
+            }
+            else throw new ArgumentException("Command not found");
+        }
+
+        private AdminShellV20.Submodel GetSubmodel()
+        {
+            VisualElementSubmodelRef ve1 = null;
+            if (DisplayElements.SelectedItem != null && DisplayElements.SelectedItem is VisualElementSubmodelRef)
+                ve1 = DisplayElements.SelectedItem as VisualElementSubmodelRef;
+
+            if (ve1 == null || ve1.theSubmodel == null || ve1.theEnv == null)
+            {
+                MessageBoxFlyoutShow(
+                    "No valid SubModel selected for exporting.", "Export AutomationML ..",
+                    AnyUiMessageBoxButton.OK, AnyUiMessageBoxImage.Error);
+                return null;
+            }
+            return ve1.theSubmodel;
         }
 
         public void CommandBinding_ExportNodesetUaPlugin()

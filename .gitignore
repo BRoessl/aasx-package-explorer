@@ -23,3 +23,11 @@ sample-aasx/
 /src/BlazorUI/12_Pepperl+Fuchs.aasx
 /src/BlazorUI/08_SchneiderElectric.aasx
 /src/BlazorUI/09_SchneiderElectric.aasx
+/.vs/AASXPackageExplorer/v16/.suo
+/.vs
+/new.aml
+/testAAS.aasx
+/src/AasxPackageExplorer/CAEX_ClassModel_V.3.0.xsd
+/src/AasxPackageExplorer/CAEX_ClassModel_V2.15.xsd
+/CAEX_ClassModel_V.3.0.xsd
+/CAEX_ClassModel_V2.15.xsd

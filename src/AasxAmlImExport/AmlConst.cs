@@ -7,6 +7,9 @@ This source code is licensed under the Apache License 2.0 (see LICENSE.txt).
 This source code may use other Open Source software components (see LICENSE.txt).
 */
 
+//clarify copyright topic concerning EKS InTec GmbH input
+
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +28,7 @@ namespace AasxAmlImExport
             public static string RootInstHierarchy = "AssetAdministrationShellInstanceHierarchy";
             public static string RootSystemUnitClasses = "AssetAdministrationShellSystemUnitClasses";
             public static string RootConceptDescriptions = "AssetAdministrationShellConceptDescriptions";
+            public static string RootSubModelRoleClass = "AssetAdministrationShellSubmodelRCL";
         }
 
 
@@ -134,6 +138,8 @@ namespace AasxAmlImExport
             public static string ConceptDescription = "AssetAdministrationShellRoleClassLib/ConceptDescription";
             public static string DataSpecificationContent =
                 "AssetAdministrationShellRoleClassLib/DataSpecificationContent";
+
+            public static string SubmodelRoleReference => "AutomationMLProductStandardRCL/ProductBaseInformation";
         }
 
         public static class Classes

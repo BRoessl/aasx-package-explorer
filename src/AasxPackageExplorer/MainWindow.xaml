@@ -22,6 +22,9 @@
     This source code may use other Open Source software components (see LICENSE.txt).
     -->
 
+    <!--clarify copyright topic concerning EKS InTec GmbH input-->
+
+
     <!-- TODO: fix again -->
     <!-- ReSharper disable Xaml.MissingGridIndex -->
 
@@ -52,6 +55,7 @@
                     <RoutedUICommand x:Key="PrintRepo" Text="PrintRepo" />
                     <RoutedUICommand x:Key="PrintAsset" Text="PrintAsset" />
                     <RoutedUICommand x:Key="ImportAML" Text="ImportAML" />
+                    <RoutedUICommand x:Key="ImportAMLSubmodel" Text="ImportAMLSubmodel" />
                     <RoutedUICommand x:Key="ImportSubmodel" Text="ImportSubmodel" />
                     <RoutedUICommand x:Key="ImportSubmodelElements" Text="ImportSubmodelElements" />
                     <RoutedUICommand x:Key="OPCRead" Text="OPCRead" />
@@ -214,6 +218,7 @@
         <CommandBinding Command="{StaticResource PrintRepo}" Executed="CommandBinding_Executed"/>
         <CommandBinding Command="{StaticResource PrintAsset}" Executed="CommandBinding_Executed"/>
         <CommandBinding Command="{StaticResource ImportAML}" Executed="CommandBinding_Executed"/>
+        <CommandBinding Command="{StaticResource ImportAMLSubmodel}" Executed="CommandBinding_Executed"/>
         <CommandBinding Command="{StaticResource ImportSubmodel}" Executed="CommandBinding_Executed"/>
         <CommandBinding Command="{StaticResource ImportSubmodelElements}" Executed="CommandBinding_Executed"/>
         <CommandBinding Command="{StaticResource OPCRead}" Executed="CommandBinding_Executed"/>
@@ -343,7 +348,10 @@
                         </MenuItem>
                         <Separator/>
                         <MenuItem Header="Import ..">
-                            <MenuItem Header="Import AutomationML into AASX .." Command="{StaticResource ImportAML}"/>
+                            <MenuItem Header="Import AutomationML ..">
+                                <MenuItem Header="Import AutomationML into AASX .." Command="{StaticResource ImportAML}"/>
+                                <MenuItem Header="Import AutomationML as Submodel .." Command="{StaticResource ImportAMLSubmodel}"/>
+                            </MenuItem>
                             <MenuItem Header="Import Submodel from JSON .." Command="{StaticResource SubmodelRead}"/>
                             <MenuItem Header="GET Submodel from URL .." Command="{StaticResource SubmodelGet}"/>
                             <MenuItem Header="Import Submodel from Dictionary .." Command="{StaticResource ImportSubmodel}"/>

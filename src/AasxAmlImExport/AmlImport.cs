@@ -7,6 +7,9 @@ This source code is licensed under the Apache License 2.0 (see LICENSE.txt).
 This source code may use other Open Source software components (see LICENSE.txt).
 */
 
+//clarify copyright topic concerning EKS InTec GmbH input
+
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +19,7 @@ using System.Threading.Tasks;
 using AasxIntegrationBase;
 using AdminShellNS;
 using Aml.Engine.CAEX;
+
 
 
 namespace AasxAmlImExport
@@ -1572,5 +1576,48 @@ namespace AasxAmlImExport
             foreach (var x in doc.CAEXFile.InstanceHierarchy)
                 parser.ParseIEsForInternalLinks(x.InternalElement);
         }
+
+        public static void ImportSubmodelInto(AdminShellPackageEnv package, string amlfn, string id, AdminShellV20.AdministrationShell aas)
+        {
+            if (!IsInputValid()) return;
+            // TODO (Miriam Schleipen-EKS InTec GmbH): idshort or other properties of the submodel depending on AML content?
+            AdminShellV20.Submodel submodel = CreateNewSubmodel(id);
+            AdminShellV20.File element = CreateSubmodelElement(amlfn);
+            submodel.Add(element);
+            RegisterSubmodel(package, aas, submodel);
+
+            bool IsInputValid()
+            {
+                return package != null && !string.IsNullOrEmpty(amlfn) && package.AasEnv != null && aas != null;
+            }
+        }
+
+        private static void RegisterSubmodel(AdminShellPackageEnv package, AdminShellV20.AdministrationShell aas, AdminShellV20.Submodel submodel)
+        {
+            aas.AddSubmodelRef(submodel.GetSubmodelRef());
+            package.AasEnv.Submodels.Add(submodel);
+        }
+
+        private static AdminShellV20.File CreateSubmodelElement(string amlfn)
+        {
+            return new AdminShell.File
+            {
+                idShort = System.IO.Path.GetFileName(amlfn),
+                
+                //TODO (Miriam Schleipen-EKS InTec GmbH): other mimetype specific to AML?
+                mimeType = "text/xml",
+                
+                //TODO (Miriam Schleipen-EKS InTec GmbH): shall AutomationML file be stored in the context of the AAS/relative to the AASX and be referenced here?
+                value = amlfn
+            };
+        }
+
+        private static AdminShellV20.Submodel CreateNewSubmodel(string id)
+        {
+            AdminShell.Submodel sm = new AdminShell.Submodel { idShort = "AutomationMLSubmodel" };
+            sm.SetIdentification(AdminShellV20.Identification.IRI, id);
+            return sm;
+        }
     }
+
 }
